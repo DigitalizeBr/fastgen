@@ -1,0 +1,7 @@
+name: telemetry
+description: Adiciona observabilidade com Prometheus
+targets:
+  - path: app/observability.py
+    template: observability.py
+  - path: requirements.txt
+    append: "\nprometheus-fastapi-instrumentator"

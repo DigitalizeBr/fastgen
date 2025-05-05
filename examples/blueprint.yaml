@@ -1,0 +1,67 @@
+service:
+  name: sia-credential
+  description: Serviço de análise de credenciais
+  author: Fabio G. Rocha
+
+architecture:
+  ddd: true
+  cqrs: true
+  saga: orquestrada  # opções: coreografada | orquestrada | none
+
+api:
+  framework: fastapi
+  auth:
+    enabled: true
+    method: jwt  # opções: jwt | oauth2 | firebase
+  cors:
+    enabled: true
+
+database:
+  enabled: true
+  engine: postgresql  # opções: postgresql | mysql | sqlite
+  orm: sqlmodel
+  migrations: alembic
+
+messaging:
+  enabled: true
+  broker: rabbitmq  # opções: rabbitmq | kafka | nats
+  pattern: pubsub  # opções: pubsub | rpc | event-driven
+
+observability:
+  enabled: true
+  tracing: opentelemetry
+  metrics: prometheus
+  logging: structlog
+
+devops:
+  docker: true
+  docker_compose: true
+  k8s: true
+  helm: false
+  ci_cd:
+    enabled: true
+    tool: github-actions
+
+testing:
+  enabled: true
+  framework: pytest
+  coverage: true
+  sast: bandit
+
+structure:
+  folders:
+    - app/routes
+    - app/models
+    - app/services
+    - app/core
+    - app/infrastructure
+    - app/domain
+    - tests
+  files:
+    - README.md
+    - .gitignore
+    - .env
+    - requirements.txt
+    - Dockerfile
+    - docker-compose.yml
+    - pyproject.toml

@@ -1,0 +1,3 @@
+[tool.uv]
+workspace = true
+members = []

@@ -1,0 +1,3 @@
+version: "3.9"
+services:
+  # Os serviços serão adicionados manualmente ou por um futuro comando
