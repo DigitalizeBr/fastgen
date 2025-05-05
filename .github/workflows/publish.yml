@@ -5,8 +5,8 @@ on:
     types: [created]
 
 jobs:
-  upload-release-assets:
-    name: Upload binaries to release
+  upload:
+    name: Upload binaries to GitHub Release
     runs-on: ubuntu-latest
 
     steps:
@@ -16,14 +16,14 @@ jobs:
       - name: Upload Linux binary
         uses: softprops/action-gh-release@v1
         with:
-          files: fastgen-Linux/fastgen
+          files: fastgen-Linux/fastgen-Linux
 
       - name: Upload Windows binary
         uses: softprops/action-gh-release@v1
         with:
-          files: fastgen-Windows/fastgen.exe
+          files: fastgen-Windows/fastgen-Windows.exe
 
       - name: Upload macOS binary
         uses: softprops/action-gh-release@v1
         with:
-          files: fastgen-macOS/fastgen
+          files: fastgen-macOS/fastgen-macOS
