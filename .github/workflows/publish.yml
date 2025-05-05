@@ -1,29 +1,46 @@
-name: Publish Release
+name: Release Build
 
 on:
-  release:
-    types: [created]
+  push:
+    tags:
+      - 'v*'  # Exemplo: v1.0.0
+
+env:
+  CARGO_TERM_COLOR: always
 
 jobs:
-  upload:
-    name: Upload binaries to GitHub Release
-    runs-on: ubuntu-latest
+  build:
+    name: Build binaries
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
 
     steps:
-      - name: Download all artifacts
-        uses: actions/download-artifact@v3
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-      - name: Upload Linux binary
-        uses: softprops/action-gh-release@v1
+      - name: Set up Rust
+        uses: actions-rs/toolchain@v1
         with:
-          files: fastgen-Linux/fastgen-Linux
+          toolchain: stable
+          override: true
 
-      - name: Upload Windows binary
-        uses: softprops/action-gh-release@v1
-        with:
-          files: fastgen-Windows/fastgen-Windows.exe
+      - name: Build
+        run: cargo build --release --verbose
 
-      - name: Upload macOS binary
-        uses: softprops/action-gh-release@v1
+      - name: Prepare artifacts
+        run: |
+          mkdir -p dist
+          if [[ "${{ runner.os }}" == "Windows" ]]; then
+            cp target/release/fastgen.exe dist/fastgen-${{ runner.os }}.exe
+          else
+            cp target/release/fastgen dist/fastgen-${{ runner.os }}
+          fi
+        shell: bash
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v3
         with:
-          files: fastgen-macOS/fastgen-macOS
+          name: fastgen-${{ runner.os }}
+          path: dist/
