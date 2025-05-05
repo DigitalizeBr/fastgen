@@ -1,9 +1,12 @@
-name: Build fastgen binaries
+name: Release Build
 
 on:
   push:
     tags:
-      - 'v*'
+      - 'v*'  # Exemplo: v1.0.0
+
+env:
+  CARGO_TERM_COLOR: always
 
 jobs:
   build:
@@ -15,7 +18,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Set up Rust
         uses: actions-rs/toolchain@v1
@@ -23,21 +26,21 @@ jobs:
           toolchain: stable
           override: true
 
-      - name: Build release
-        run: cargo build --release
+      - name: Build
+        run: cargo build --release --verbose
 
-      - name: Rename binary
+      - name: Prepare artifacts
         run: |
-          mkdir output
+          mkdir -p dist
           if [[ "${{ runner.os }}" == "Windows" ]]; then
-            cp target/release/fastgen.exe output/fastgen-${{ runner.os }}.exe
+            cp target/release/fastgen.exe dist/fastgen-${{ runner.os }}.exe
           else
-            cp target/release/fastgen output/fastgen-${{ runner.os }}
+            cp target/release/fastgen dist/fastgen-${{ runner.os }}
           fi
         shell: bash
 
-      - name: Upload artifact
+      - name: Upload artifacts
         uses: actions/upload-artifact@v3
         with:
           name: fastgen-${{ runner.os }}
-          path: output/
+          path: dist/
