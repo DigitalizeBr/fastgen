@@ -1,0 +1,29 @@
+name: Publish Release
+
+on:
+  release:
+    types: [created]
+
+jobs:
+  upload-release-assets:
+    name: Upload binaries to release
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v3
+
+      - name: Upload Linux binary
+        uses: softprops/action-gh-release@v1
+        with:
+          files: fastgen-Linux/fastgen
+
+      - name: Upload Windows binary
+        uses: softprops/action-gh-release@v1
+        with:
+          files: fastgen-Windows/fastgen.exe
+
+      - name: Upload macOS binary
+        uses: softprops/action-gh-release@v1
+        with:
+          files: fastgen-macOS/fastgen
