@@ -1,4 +1,4 @@
-name: Release Linux Binary
+name: Auto Create Release
 
 on:
   push:
@@ -9,7 +9,8 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  build:
+  build-and-release:
+    name: Build and publish binary
     runs-on: ubuntu-latest
 
     steps:
@@ -22,7 +23,7 @@ jobs:
           toolchain: stable
           override: true
 
-      - name: Build release binary
+      - name: Build binary
         run: cargo build --release
 
       - name: Package binary
@@ -31,9 +32,13 @@ jobs:
           cp target/release/fastgen dist/
           cd dist && zip fastgen-linux.zip fastgen
 
-      - name: Upload to GitHub Release
+      - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
         with:
+          name: Release ${{ github.ref_name }}
+          tag_name: ${{ github.ref_name }}
+          body: |
+            🚀 Release gerada automaticamente para a versão ${{ github.ref_name }}.
           files: dist/fastgen-linux.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
