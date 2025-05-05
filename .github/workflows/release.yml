@@ -1,20 +1,16 @@
-name: Release Build
+name: Release Linux Binary
 
 on:
   push:
     tags:
-      - 'v*'  # Exemplo: v1.0.0
+      - 'v*'
 
 env:
   CARGO_TERM_COLOR: always
 
 jobs:
   build:
-    name: Build binaries
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout code
@@ -26,21 +22,18 @@ jobs:
           toolchain: stable
           override: true
 
-      - name: Build
-        run: cargo build --release --verbose
+      - name: Build release binary
+        run: cargo build --release
 
-      - name: Prepare artifacts
+      - name: Package binary
         run: |
-          mkdir -p dist
-          if [[ "${{ runner.os }}" == "Windows" ]]; then
-            cp target/release/fastgen.exe dist/fastgen-${{ runner.os }}.exe
-          else
-            cp target/release/fastgen dist/fastgen-${{ runner.os }}
-          fi
-        shell: bash
+          mkdir dist
+          cp target/release/fastgen dist/
+          cd dist && zip fastgen-linux.zip fastgen
 
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v3
+      - name: Upload to GitHub Release
+        uses: softprops/action-gh-release@v1
         with:
-          name: fastgen-${{ runner.os }}
-          path: dist/
+          files: dist/fastgen-linux.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
