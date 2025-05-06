@@ -1,0 +1,16 @@
+name: Reportar Bug
+description: Relate um bug no projeto
+labels: [bug]
+body:
+  - type: textarea
+    attributes:
+      label: O que aconteceu?
+      placeholder: Descreva o bug observado
+  - type: textarea
+    attributes:
+      label: Como reproduzir?
+      placeholder: Passos para reproduzir o bug
+  - type: input
+    attributes:
+      label: Versão do sistema
+      placeholder: ex: fastgen v0.2.1

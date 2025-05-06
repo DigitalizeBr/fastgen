@@ -1,0 +1,11 @@
+name: Solicitar Funcionalidade
+description: Sugira uma nova ideia ou melhoria
+labels: [enhancement]
+body:
+  - type: input
+    attributes:
+      label: Nome da funcionalidade
+  - type: textarea
+    attributes:
+      label: Descrição
+      placeholder: O que você gostaria de ver adicionado?
