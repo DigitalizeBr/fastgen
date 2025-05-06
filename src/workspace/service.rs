@@ -50,7 +50,7 @@ pub fn add_service(name: &str, repo: &str) {
         fs::write(env_path, env).unwrap();
     }
 
-    let app_path = format!("{}/services/{}", repo, name);
+    let app_path = format!("services/{}", name);
     let status = Command::new("uv")
         .args(["init", &app_path, "--no-workspace", "--app"])
         .current_dir(repo)
