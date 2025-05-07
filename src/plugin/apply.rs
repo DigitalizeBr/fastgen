@@ -4,17 +4,18 @@ use std::env;
 
 use tera::{Tera, Context};
 use crate::plugin::metadata::Plugin;
+use crate::config::Config;
 
 use reqwest::blocking::Client;
 use serde::Deserialize;
 use base64;
 
-pub fn apply_plugin(name: &str, project: &str) {
+pub fn apply_plugin(name: &str, project: &str, config: &Config) {
     let plugin_path = format!("templates/plugins/{}/plugin.yaml", name);
 
     if !Path::new(&plugin_path).exists() {
         println!("Plugin '{}' não encontrado localmente. Baixando do GitHub...", name);
-        download_plugin_from_github(name).expect("Erro ao baixar plugin remoto");
+        download_plugin_from_github(name, config).expect("Erro ao baixar plugin remoto");
     }
 
     let yaml = fs::read_to_string(&plugin_path).expect("Erro ao ler plugin.yaml");
@@ -60,14 +61,15 @@ struct GitHubFile {
     encoding: Option<String>,
 }
 
-fn download_plugin_from_github(plugin_name: &str) -> Result<(), Box<dyn std::error::Error>> {
+fn download_plugin_from_github(plugin_name: &str, config: &Config) -> Result<(), Box<dyn std::error::Error>> {
     let url = format!(
         "https://api.github.com/repos/DigitalizeBr/fastgen/contents/templates/plugins/{}",
         plugin_name
     );
 
-    let token = env::var("FASTGEN_GITHUB_TOKEN")
-        .unwrap_or_else(|_| "".to_string());
+    let token = config.github_token.clone().unwrap_or_else(|| {
+        panic!("Token do GitHub não encontrado. Adicione em config.yaml como 'github_token'")
+    });
 
     let client = Client::builder()
         .user_agent("fastgen")
