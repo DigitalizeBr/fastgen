@@ -157,5 +157,21 @@ templates/plugins/<nome-do-plugin>/
 Cada plugin deve conter pelo menos um arquivo `plugin.yaml` e os arquivos/templates necessários (.py, .env, .toml etc).
 
 ---
+## ☁️ Plugins Remotos via GitHub
+Se o plugin não existir localmente, o fastgen o baixa do repositório oficial no GitHub:
+https://github.com/DigitalizeBr/fastgen
+
+---
+## ⚙️ Configuração via config.yaml
+Para configurar chaves e opções adicionais como o token do GitHub (usado para baixar plugins automaticamente), crie um arquivo config.yaml na raiz do projeto:
+
+```bash
+github_token: "seu_token_aqui"
+```
+
+Nota: este arquivo é ignorado via .gitignore e não será versionado.
+
+
+---
 
 **Contribuições são bem-vindas!**
