@@ -2,6 +2,6 @@ name: auth-jwt
 description: Adiciona autenticação JWT
 targets:
   - path: app/routes/auth.py
-    template: plugins/auth-jwt/auth.py
+    template: auth.py
   - path: requirements.txt
     append: "\npython-jose\npasslib[bcrypt]"
