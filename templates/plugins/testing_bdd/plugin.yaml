@@ -1,0 +1,13 @@
+name: testing_bdd
+description: Adiciona suporte a testes unitários com pytest e BDD com pytest-bdd.
+version: 0.1.0
+author: fastgen
+targets:
+  - path: tests
+    copy: true
+  - path: features
+    copy: true
+  - path: requirements.txt
+    append: |
+      pytest
+      pytest-bdd

@@ -1,0 +1,1 @@
+# Variáveis de ambiente

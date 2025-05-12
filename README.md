@@ -1,66 +1,69 @@
-# ⚡ fastgen - Gerador de Microsserviços Cloud Native com FastAPI
+# ⚡ fastgen - Cloud Native Microservices Generator with FastAPI
 
-O `fastgen` é uma ferramenta de linha de comando (CLI) desenvolvida em **Rust**, inspirada no **Quarkus**, com o objetivo de simplificar e acelerar a criação de projetos **Cloud Native** com **FastAPI** em Python.
+`fastgen` is a command-line interface (CLI) tool built in **Rust**, inspired by **Quarkus**, designed to simplify and accelerate the creation of **Cloud Native** projects using **FastAPI** in Python.
 
-Ele permite gerar rapidamente um monorepo com múltiplos microsserviços FastAPI, prontos para uso com `uv`, `Docker`, `docker-compose` e variáveis de ambiente gerenciadas via `.env`.
-
----
-
-## 🚀 Funcionalidades
-
-- Criação de monorepos com `pyproject.toml` estruturado para o `uv`
-- Geração automática de microsserviços FastAPI com:
-  - `main.py` com aplicação base
-  - `Dockerfile` e `requirements.txt`
-  - `pyproject.toml` com `[tool.uv.app]` pronto para `uv dev`
-- Uso do `uv init --no-workspace --app` em cada serviço
-- Atualização automática do `docker-compose.yml` e `.env`
-- Geração de portas dinâmicas por serviço
-- Catálogo de serviços externos: PostgreSQL, Redis, RabbitMQ, MongoDB, MinIO, Keycloak
-- Suporte à extensão por plugins reutilizáveis
+It enables developers to quickly scaffold a monorepo with multiple FastAPI microservices, ready for use with `uv`, `Docker`, `docker-compose`, and environment variables managed via `.env`.
 
 ---
 
-## 🛠️ Comandos Disponíveis
+## 🚀 Features
+
+- Monorepo generation with a structured `pyproject.toml` for `uv`
+- Automatic microservice creation with:
+  - `main.py` base application
+  - `Dockerfile` and `requirements.txt`
+  - `pyproject.toml` pre-configured for `uv dev`
+- Uses `uv init --no-workspace --app` in each service
+- Automatic updates to `docker-compose.yml` and `.env`
+- Dynamic port assignment per service
+- External service catalog: PostgreSQL, Redis, RabbitMQ, MongoDB, MinIO, Keycloak
+- Support for reusable plugins
+- Plugins for automated testing (unit and BDD)
+- Plugin for Kubernetes manifest generation
+
+---
+
+## 🛠️ Available Commands
 
 ```bash
-fastgen new-workspace --name minha-plataforma
-fastgen add-service --name auth --to minha-plataforma
-fastgen add-ext --name postgresql --to minha-plataforma
+fastgen new-workspace --name my-platform
+fastgen add-service --name auth --to my-platform
+fastgen add-ext --name postgresql --to my-platform
 ```
 
 ---
 
-## 📦 Requisitos
+## 📦 Requirements
+
 - [Docker](https://www.docker.com/)
 - [Rust](https://www.rust-lang.org/tools/install)
 - [Python ≥ 3.10](https://www.python.org/)
-- [uv (da Astral)](https://github.com/astral-sh/uv):
-  
-  Instalação:
+- [uv (from Astral)](https://github.com/astral-sh/uv)
 
-  ```bash
-  curl -LsSf https://astral.sh/uv/install.sh | sh
-  ```
+Install with:
+
+```bash
+curl -LsSf https://astral.sh/uv/install.sh | sh
+```
 
 ---
 
-## 🧪 Exemplo de Uso Completo
+## 🧪 Full Example
 
 ```bash
-fastgen new-workspace --name empresa
+fastgen new-workspace --name company
 
-fastgen add-service --name users --to empresa
-fastgen add-service --name orders --to empresa
+fastgen add-service --name users --to company
+fastgen add-service --name orders --to company
 
-fastgen add-ext --name redis --to empresa
-fastgen add-ext --name postgresql --to empresa
+fastgen add-ext --name redis --to company
+fastgen add-ext --name postgresql --to company
 ```
 
-Resultado:
+Result:
 
 ```
-empresa/
+company/
 ├── services/
 │   ├── users/
 │   │   ├── main.py
@@ -69,109 +72,127 @@ empresa/
 │   └── orders/
 ├── docker-compose.yml
 ├── .env
-└── pyproject.toml  # com members configurado corretamente
+└── pyproject.toml  # with properly configured members
 ```
 
 ---
 
-## ▶️ Para executar localmente:
+## ▶️ Running Locally
 
 ```bash
-cd empresa
+cd company
 docker compose up
 ```
 
 ---
 
-## 🔌 Extensões Externas Disponíveis (`add-ext`)
+## 🔌 Available External Extensions (`add-ext`)
 
-O comando `add-ext` adiciona automaticamente serviços populares ao `docker-compose.yml`, com configuração mínima e suporte a variáveis no `.env`.
-
-Atualmente, o catálogo de extensões inclui:
-
-| Nome        | Descrição                             | Porta(s)     |
-|-------------|----------------------------------------|--------------|
-| `postgresql`| Banco de dados relacional              | 5432         |
-| `redis`     | Armazenamento em memória               | 6379         |
-| `rabbitmq`  | Broker de mensageria AMQP              | 5672 (AMQP), 15672 (UI) |
-| `mongodb`   | Banco de dados NoSQL baseado em documentos | 27017     |
-| `minio`     | Armazenamento de objetos compatível com S3 | 9000      |
-| `keycloak`  | Autenticação e autorização federada    | 8080         |
-
-### 🧪 Exemplo de uso:
+| Name        | Description                                | Port(s)               |
+|-------------|--------------------------------------------|------------------------|
+| `postgresql`| Relational database                        | 5432                   |
+| `redis`     | In-memory storage                          | 6379                   |
+| `rabbitmq`  | AMQP message broker                        | 5672 (AMQP), 15672 (UI)|
+| `mongodb`   | Document-based NoSQL database              | 27017                  |
+| `minio`     | S3-compatible object storage               | 9000                   |
+| `keycloak`  | Federated authentication and authorization| 8080                   |
 
 ```bash
-fastgen add-ext --name redis --to empresa
-fastgen add-ext --name postgresql --to empresa
+fastgen add-ext --name redis --to company
+fastgen add-ext --name postgresql --to company
 ```
 
 ---
 
-## 🧩 Criando e Usando Plugins Reutilizáveis (`plugin`)
+## 🧩 Reusable Plugins (`plugin`)
 
-Plugins permitem adicionar funcionalidades específicas (como autenticação, middlewares ou configurações extras) de forma reaproveitável em qualquer microsserviço.
-
-### 📁 Estrutura de um plugin:
-
-```
-templates/
-└── plugins/
-    └── auth-jwt/
-        ├── plugin.yaml
-        └── auth.py
-```
-
-### ✍️ Exemplo de `plugin.yaml`:
+### 🔐 JWT Authentication Plugin
 
 ```yaml
 name: auth-jwt
-description: Adiciona autenticação JWT
+description: Adds JWT authentication
 targets:
   - path: app/routes/auth.py
     template: auth.py
   - path: requirements.txt
-    append: "\npython-jose\npasslib[bcrypt]"
+    append: "
+python-jose
+passlib[bcrypt]"
 ```
-
-### ✅ Aplicando o plugin:
 
 ```bash
-fastgen plugin --name auth-jwt --project empresa/services/users
+fastgen plugin --name auth-jwt --project company/services/users
 ```
 
-Isso irá:
+### 🧪 Unit Testing and BDD Plugin
 
-- Renderizar o arquivo `auth.py` a partir do template
-- Adicionar as dependências no `requirements.txt`
-
----
-
-## 📂 Onde colocar seus plugins
-
-Todos os plugins devem ser adicionados em:
-
+```yaml
+name: testing_bdd
+description: Adds support for unit testing with pytest and BDD with pytest-bdd.
+targets:
+  - path: tests
+    copy: true
+  - path: features
+    copy: true
+  - path: requirements.txt
+    append: |
+      pytest
+      pytest-bdd
 ```
-templates/plugins/<nome-do-plugin>/
-```
-
-Cada plugin deve conter pelo menos um arquivo `plugin.yaml` e os arquivos/templates necessários (.py, .env, .toml etc).
-
----
-## ☁️ Plugins Remotos via GitHub
-Se o plugin não existir localmente, o fastgen o baixa do repositório oficial no GitHub:
-https://github.com/DigitalizeBr/fastgen
-
----
-## ⚙️ Configuração via config.yaml
-Para configurar chaves e opções adicionais como o token do GitHub (usado para baixar plugins automaticamente), crie um arquivo config.yaml na raiz do projeto:
 
 ```bash
-github_token: "seu_token_aqui"
+fastgen plugin --name testing_bdd --project company/services/orders
 ```
 
-Nota: este arquivo é ignorado via .gitignore e não será versionado.
+### ☁️ Kubernetes Plugin
 
+```yaml
+name: kubernetes
+description: Generates Kubernetes manifests (deployment + service)
+targets:
+  - path: k8s
+    copy: true
+```
+
+```bash
+fastgen plugin --name kubernetes --project company/services/users
+```
 
 ---
 
-**Contribuições são bem-vindas!**
+## 📂 Plugin Structure
+
+All plugins must be placed in:
+
+```
+templates/plugins/<plugin-name>/
+```
+
+Each must include a valid `plugin.yaml` and all necessary files/templates.
+
+---
+
+## ☁️ Remote Plugins
+
+If the plugin doesn't exist locally, FastGen will fetch it from the official repository:
+
+🔗 https://github.com/DigitalizeBr/fastgen
+
+---
+
+## ⚙️ Configuration via `config.yaml`
+
+```yaml
+github_token: "your_token_here"
+default_author: "Your Name"
+```
+
+This file is `.gitignore`d and won't be committed.
+
+---
+
+## 🤝 Contribute!
+
+We welcome contributions!
+
+If you enjoy **Rust**, **Python**, **software architecture**, **DevOps**, or want to help with **documentation, testing, or plugins** — join us!
