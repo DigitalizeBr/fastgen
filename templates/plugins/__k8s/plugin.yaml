@@ -1,9 +1,0 @@
-name: k8s-deploy
-description: Gera os arquivos de deployment Kubernetes
-targets:
-  - path: k8s/deployment.yaml
-    template: deployment.yaml
-  - path: k8s/service.yaml
-    template: service.yaml
-  - path: k8s/ingress.yaml
-    template: ingress.yaml
