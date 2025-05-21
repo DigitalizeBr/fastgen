@@ -6,11 +6,6 @@ pub fn create_workspace(name: &str) {
     fs::create_dir_all(base.join("services")).unwrap();
 
     fs::write(
-        base.join("pyproject.toml"),
-        "[tool.uv.workspace]\nmembers = []\n",
-    ).unwrap();
-
-    fs::write(
         base.join("docker-compose.yml"),
         "version: \"3.9\"\nservices:\n",
     ).unwrap();

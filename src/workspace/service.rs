@@ -26,13 +26,7 @@ pub fn add_service(name: &str, repo: &str) {
         fs::write(service_path.join(file), rendered).unwrap();
     }
 
-    let py_path = Path::new(repo).join("pyproject.toml");
-    let mut py = fs::read_to_string(&py_path).unwrap();
-    let member = format!("\"services/{}\"", name);
-    if !py.contains(&member) {
-        py = py.replace("members = [", &format!("members = [\n    {},", member));
-        fs::write(py_path, py).unwrap();
-    }
+    
 
     let compose_path = Path::new(repo).join("docker-compose.yml");
     let mut compose = fs::read_to_string(&compose_path).unwrap();
@@ -52,10 +46,10 @@ pub fn add_service(name: &str, repo: &str) {
 
     let app_path = format!("services/{}", name);
     let status = Command::new("uv")
-        .args(["init", &app_path, "--no-workspace", "--app"])
-        .current_dir(repo)
+        .args(["init", "--app"])
+        .current_dir(&service_path) // Muda o diretório atual para dentro do serviço
         .status()
-        .expect("Erro ao rodar 'uv init <path> --no-workspace --app'");
+        .expect("Erro ao rodar 'uv init --no-workspace --app'");
     
     if status.success() {
         println!("FastAPI adicionado com sucesso via uv!");
