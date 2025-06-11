@@ -49,7 +49,7 @@ pub fn run(config: Config) {
         Commands::Generate { blueprint } => generate_project(&blueprint),
         Commands::Plugin { name, project } => apply_plugin(&name, &project, &config),
         Commands::NewWorkspace { name } => create_workspace(&name),
-        Commands::AddService { name, to } => add_service(&name, &to),
+        Commands::AddService { name, to } => add_service(&name, &to, None),
         Commands::AddExt { name, to } => add_external_service(&name, &to),
     }
 }
