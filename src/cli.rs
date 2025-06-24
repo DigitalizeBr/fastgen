@@ -4,6 +4,7 @@ use crate::plugin::apply_plugin;
 use crate::workspace::init::create_workspace;
 use crate::workspace::service::add_service;
 use crate::workspace::external::add_external_service;
+use crate::workspace::devui::start_dev_ui;
 use crate::config::Config;
 
 #[derive(Parser)]
@@ -41,6 +42,10 @@ enum Commands {
         #[arg(long)]
         to: String,
     },
+    DevUi {
+        #[arg(long)]
+        repo: String,
+    },
 }
 
 pub fn run(config: Config) {
@@ -51,5 +56,6 @@ pub fn run(config: Config) {
         Commands::NewWorkspace { name } => create_workspace(&name),
         Commands::AddService { name, to } => add_service(&name, &to),
         Commands::AddExt { name, to } => add_external_service(&name, &to),
+        Commands::DevUi { repo } => start_dev_ui(&repo),
     }
 }

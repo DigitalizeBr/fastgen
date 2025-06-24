@@ -20,6 +20,7 @@ It enables developers to quickly scaffold a monorepo with multiple FastAPI micro
 - Support for reusable plugins
 - Plugins for automated testing (unit and BDD)
 - Plugin for Kubernetes manifest generation
+- Simple Dev UI to inspect your workspace
 
 ---
 
@@ -29,6 +30,7 @@ It enables developers to quickly scaffold a monorepo with multiple FastAPI micro
 fastgen new-workspace --name my-platform
 fastgen add-service --name auth --to my-platform
 fastgen add-ext --name postgresql --to my-platform
+fastgen dev-ui --repo my-platform
 ```
 
 ---
