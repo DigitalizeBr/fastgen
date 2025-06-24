@@ -23,3 +23,4 @@ pub fn generate_project(blueprint_path: &str) {
 
     println!("Projeto '{}' gerado com sucesso!", blueprint.service.name);
 }
+
