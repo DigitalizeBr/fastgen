@@ -56,9 +56,28 @@ fastgen add-ext --name postgresql --to minha-plataforma
 - [Docker](https://www.docker.com/)
 - [Rust](https://www.rust-lang.org/tools/install)
 - [Python ≥ 3.10](https://www.python.org/)
-- [uv (da Astral)](https://github.com/astral-sh/uv):
+- [uv (da Astral)](https://github.com/astral-sh/uv)
 
-Instalação:
+### Compilação / Instalação
+
+Para usar o FastGen a partir do código fonte, clone o repositório e compile-o para a sua plataforma (Linux, macOS, Windows) usando o `cargo` da linguagem Rust:
+
+```bash
+git clone https://github.com/DigitalizeBr/fastgen.git
+cd fastgen
+
+# Compilar release para sua plataforma
+cargo build --release
+
+# O binário ficará em:
+# target/release/fastgen (Linux/macOS)
+# target\release\fastgen.exe (Windows)
+
+# Opcionalmente, instale-o no sistema:
+cargo install --path .
+```
+
+Instale o `uv` via:
 
 ```bash
 curl -LsSf https://astral.sh/uv/install.sh | sh
@@ -201,7 +220,49 @@ FastGen busca plugins automaticamente no GitHub, se não existirem localmente:
 ```yaml
 github_token: "seu_token_aqui"
 default_author: "Seu Nome"
+
+# Configurações de Inteligência Artificial para `ai-generate`
+llm_provider: "ollama"           # "openai", "gemini", ou "ollama"
+llm_model: "llama3"              # Ex: "gpt-4o", "gemini-1.5-pro", ou "llama3"
+openai_api_key: "sk-..."         # Requerido caso o provider seja openai
+gemini_api_key: "AIza..."        # Requerido caso o provider seja gemini
+ollama_url: "http://localhost:11434" # Requerido se for ollama
 ```
+
+---
+
+## 🤖 Geração Cloud Native via Inteligência Artificial
+
+O FastGen permite que você gere microsserviços inteiros e configurações nativas na nuvem usando IAs modernas (Ollama, OpenAI, Gemini).
+
+Para utilizá-lo, crie um diretório de manifestos. Dentro deste diretório, coloque pastas para os serviços e/ou infraestruturas desejadas. Em cada pasta, adicione um `.md` ou `.yml` detalhando o que você deseja criar. Se quiser que a IA revise o código gerado no final do processo, adicione uma pasta `validation` com os critérios de aceite.
+
+```
+meus-manifestos/
+├── auth_service/
+│   └── regras.md             # "Crie um serviço FastAPI focado em auth..."
+├── processador_pagamentos/
+│   └── fluxo.yml             # "Script python que consome RabbitMQ..."
+└── validation/
+    └── regras_seguranca.md   # "Sempre use Pydantic. Não use chaves hardcoded no código..."
+```
+
+**Modo Terminal (CLI):**
+
+```bash
+fastgen ai-generate --path ./meus-manifestos
+```
+
+O FastGen vai ler os arquivos, apresentar um planejamento detalhado de arquitetura na tela e, após sua aprovação (`Y/n`), irá criar os códigos de verdade diretamente na pasta. Ao final das tarefas, o *Agente de Validação* vai escanear a codebase contra suas regras.
+
+**Modo Gráfico Web (Dev UI):**
+
+Você também pode utilizar o modo visual no navegador:
+
+```bash
+fastgen dev-ui --repo minha-plataforma --ai-path ./meus-manifestos
+```
+Acesse `http://localhost:9000` para abrir a interface web (Dev UI) do FastGen, que agora possui uma aba dedicada **🤖 AI Generator**.
 
 ---
 
