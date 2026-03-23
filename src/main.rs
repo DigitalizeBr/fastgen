@@ -4,6 +4,7 @@ mod plugin;
 mod utils;
 mod workspace;
 mod config;
+mod ai;
 
 
 fn main() {

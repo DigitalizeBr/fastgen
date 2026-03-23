@@ -187,9 +187,30 @@ If the plugin doesn't exist locally, FastGen will fetch it from the official rep
 ```yaml
 github_token: "your_token_here"
 default_author: "Your Name"
+
+# AI Configuration for `ai-generate`
+llm_provider: "ollama"           # Can be "openai", "gemini", or "ollama"
+llm_model: "llama3"              # E.g., "gpt-4o", "gemini-1.5-pro", or "llama3"
+openai_api_key: "sk-..."         # Required if provider is openai
+gemini_api_key: "AIza..."        # Required if provider is gemini
+ollama_url: "http://localhost:11434" # Required if provider is ollama
 ```
 
 This file is `.gitignore`d and won't be committed.
+
+---
+
+## 🤖 AI Generation
+
+FastGen allows you to generate complete services and cloud-native infrastructure using AI (Ollama, OpenAI, Gemini).
+
+To use it, create a directory with subdirectories for your services and/or infrastructure. In each subdirectory, place a `.md` or `.yml` manifest explaining what needs to be created. You can optionally include a `validation` folder with instructions on how to evaluate the final code.
+
+```bash
+fastgen ai-generate --path ./my-manifests
+```
+
+The tool will read the manifests, propose a plan for each service, ask for your approval, and generate the files directly in that folder using the configured LLM. If a validation step is defined, it will review the created files against your instructions.
 
 ---
 

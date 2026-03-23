@@ -5,6 +5,13 @@ use std::fs;
 pub struct Config {
     pub github_token: Option<String>,
     pub default_author: Option<String>,
+
+    // AI Configurations
+    pub llm_provider: Option<String>, // "openai", "gemini", "ollama"
+    pub llm_model: Option<String>,    // e.g., "gpt-4o", "gemini-1.5-pro", "llama3"
+    pub openai_api_key: Option<String>,
+    pub gemini_api_key: Option<String>,
+    pub ollama_url: Option<String>,   // default: "http://localhost:11434"
 }
 
 impl Config {
