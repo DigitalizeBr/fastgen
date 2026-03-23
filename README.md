@@ -200,17 +200,113 @@ This file is `.gitignore`d and won't be committed.
 
 ---
 
-## 🤖 AI Generation
+## 🤖 Cloud Native Generation via AI and Dev UI
 
-FastGen allows you to generate complete services and cloud-native infrastructure using AI (Ollama, OpenAI, Gemini).
+FastGen allows you to generate complete microservices and cloud-native infrastructure using modern AIs (Ollama, OpenAI, Gemini). You can monitor your workspace and leverage AI generation through a Command Line Interface (CLI) or the visual Dev UI.
 
-To use it, create a directory with subdirectories for your services and/or infrastructure. In each subdirectory, place a `.md` or `.yml` manifest explaining what needs to be created. You can optionally include a `validation` folder with instructions on how to evaluate the final code.
+### ⚙️ Configuring AI Agents
 
+AI configuration is handled in the `config.yaml` file (usually generated in the root directory where you execute fastgen; if it doesn't exist, it will be created during operations that require it). You must choose the provider and model that best suit your needs.
+
+Example `config.yaml`:
+```yaml
+github_token: "your_token_here"
+default_author: "Your Name"
+
+# AI Configuration for `ai-generate`
+llm_provider: "openai"           # Can be "openai", "gemini", or "ollama"
+llm_model: "gpt-4o"              # E.g., "gpt-4o", "gemini-1.5-pro", or "llama3"
+
+# Fill in the key corresponding to your provider:
+openai_api_key: "sk-yourkeyhere"
+gemini_api_key: "AIza-yourkeyhere"
+ollama_url: "http://localhost:11434" # If using local Ollama
+```
+
+### 🎨 How to Use the Dev UI Environment
+
+FastGen features a Dev UI that allows you to view configured services, installed plugins, and interactively access the AI Generator.
+
+To start the Dev UI, simply run:
+```bash
+# Starts the visual interface for an existing repository or an AI manifests directory
+fastgen dev-ui --repo my-platform --ai-path ./my-manifests
+```
+Access **http://localhost:9000** in your browser.
+- In the **Workspace** tab, you can view the generated services and extensions.
+- In the **🤖 AI Generator** tab, you can see your AI manifests, monitor generation status, and trigger the generation process directly from the interface with a single click.
+
+### 🚀 Tutorial: Creating a Completely New Project from Scratch with AI
+
+Let's build a complete system (e.g., a Products API and a Notifications Service) from scratch using AI.
+
+**Step 1: Create a directory for your manifests**
+This directory will be read by the AI Agents to understand what needs to be coded.
+```bash
+mkdir my-manifests
+```
+
+**Step 2: Create the directory structure and write your manifests**
+Inside the manifests directory, create a folder for each microservice the AI should generate, and place a Markdown file (`.md`) detailing the rules. You can also include a special `validation` folder for global review rules.
+
+Recommended structure:
+```
+my-manifests/
+├── products/
+│   └── rules.md
+├── notifications/
+│   └── instructions.md
+└── validation/
+    └── security_rules.md
+```
+
+**Example Manifest 1:** `my-manifests/products/rules.md`
+```markdown
+# Products Microservice
+Create a FastAPI application to manage a product catalog.
+- Must use Pydantic for Product models (id, name, price, description).
+- Implement GET /products, POST /products, and GET /products/{id} routes.
+- Use an in-memory database (a simple Python dictionary or list) for temporary data storage.
+- Ensure the application runs on port 8001.
+```
+
+**Example Manifest 2:** `my-manifests/notifications/instructions.md`
+```markdown
+# Notifications Microservice
+Create a FastAPI application to send notifications.
+- Include a POST /send route with a payload containing (email, message).
+- Simply print the message to the console to simulate sending.
+- Must run on port 8002.
+```
+
+**Example Validation Rule:** `my-manifests/validation/security_rules.md`
+```markdown
+The code must not contain hardcoded secret keys or passwords (like database passwords in the middle of the code).
+Verify that Pydantic is used in all requests that receive a data body.
+```
+
+**Step 3: Code Generation**
+
+You have two options to generate this project:
+
+**Option A - Via Graphical Interface (Dev UI):**
+```bash
+fastgen dev-ui --ai-path ./my-manifests
+```
+- Go to `http://localhost:9000`
+- Navigate to the **🤖 AI Generator** tab
+- You will see the "products" and "notifications" manifests. Click **"Generate All"** or generate them individually. The agent will plan, write the files, and validate them. The progress will be displayed on screen.
+
+**Option B - Via Command Line (CLI):**
 ```bash
 fastgen ai-generate --path ./my-manifests
 ```
+- The CLI will read the manifests folder.
+- For each subfolder (products, notifications), it will propose an **architecture plan** and display it in the terminal.
+- Press `Y` to approve.
+- The AI writes the code in the same folder, and immediately after, the *Validation Agent* reviews the application to ensure it meets the rules set in `validation/`.
 
-The tool will read the manifests, propose a plan for each service, ask for your approval, and generate the files directly in that folder using the configured LLM. If a validation step is defined, it will review the created files against your instructions.
+That's it! Once finished, your `products` and `notifications` folders will be populated with `.py` files, requirements, Dockerfiles (if instructed), and you will have a brand-new application built entirely by AI!
 
 ---
 
