@@ -6,6 +6,7 @@ use crate::workspace::service::add_service;
 use crate::workspace::external::add_external_service;
 use crate::workspace::devui::start_dev_ui;
 use crate::config::Config;
+use crate::ai::cli::run_ai_generation;
 
 #[derive(Parser)]
 #[command(name = "fastgen", version)]
@@ -46,6 +47,10 @@ enum Commands {
         #[arg(long)]
         repo: String,
     },
+    AiGenerate {
+        #[arg(short, long)]
+        path: String,
+    },
 }
 
 pub fn run(config: Config) {
@@ -57,5 +62,6 @@ pub fn run(config: Config) {
         Commands::AddService { name, to } => add_service(&name, &to),
         Commands::AddExt { name, to } => add_external_service(&name, &to),
         Commands::DevUi { repo } => start_dev_ui(&repo),
+        Commands::AiGenerate { path } => run_ai_generation(&path, &config),
     }
 }
