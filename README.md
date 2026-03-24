@@ -42,7 +42,26 @@ fastgen dev-ui --repo my-platform
 - [Python ≥ 3.10](https://www.python.org/)
 - [uv (from Astral)](https://github.com/astral-sh/uv)
 
-Install with:
+### Compilation / Installation
+
+To use FastGen from source, clone the repository and compile it for your platform (Linux, macOS, Windows) using the Rust `cargo` tool:
+
+```bash
+git clone https://github.com/DigitalizeBr/fastgen.git
+cd fastgen
+
+# Compile a release for your platform
+cargo build --release
+
+# The binary will be located at:
+# target/release/fastgen (Linux/macOS)
+# target\release\fastgen.exe (Windows)
+
+# Optionally, install it on your system:
+cargo install --path .
+```
+
+Install `uv` via:
 
 ```bash
 curl -LsSf https://astral.sh/uv/install.sh | sh
