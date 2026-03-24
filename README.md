@@ -33,6 +33,8 @@ fastgen add-ext --name postgresql --to my-platform
 fastgen dev-ui --repo my-platform
 ```
 
+> **Note on `<REPO>` / `--to` parameters:** When you see parameters like `--to <path>` or `--repo <path>`, they refer to the **local path** (directory) where your workspace was generated (e.g. `my-platform` or `./my-platform`), not a remote GitHub URL.
+
 ---
 
 ## 📦 Requirements
@@ -255,33 +257,30 @@ Access **http://localhost:9000** in your browser.
 - In the **Workspace** tab, you can view the generated services and extensions.
 - In the **🤖 AI Generator** tab, you can see your AI manifests, monitor generation status, and trigger the generation process directly from the interface with a single click.
 
-### 🚀 Tutorial: Creating a Completely New Project from Scratch with AI
+### 🚀 Tutorial: Complete AI Worklfow (Creating a project and automating services with AI)
 
-Let's build a complete system (e.g., a Products API and a Notifications Service) from scratch using AI.
+FastGen allows you to easily initialize a workspace and automatically prepare your services for AI generation via the `--ai` flag. Let's create a complete system (e.g., a Products API and a Notifications Service) from scratch using AI with Python, `uv`, and FastAPI.
 
-**Step 1: Create a directory for your manifests**
-This directory will be read by the AI Agents to understand what needs to be coded.
+**Step 1: Initialize the Workspace**
+Create your base platform.
 ```bash
-mkdir my-manifests
+fastgen new-workspace --name ai-platform
 ```
 
-**Step 2: Create the directory structure and write your manifests**
-Inside the manifests directory, create a folder for each microservice the AI should generate, and place a Markdown file (`.md`) detailing the rules. You can also include a special `validation` folder for global review rules.
-
-Recommended structure:
-```
-my-manifests/
-├── products/
-│   └── rules.md
-├── notifications/
-│   └── instructions.md
-└── validation/
-    └── security_rules.md
+**Step 2: Add services with AI Manifests**
+Use the `--ai` flag when adding a service. This will create the standard `uv` + FastAPI structure and also generate a default `instrucoes.md` template for your AI generation.
+```bash
+fastgen add-service --name products --to ai-platform --ai
+fastgen add-service --name notifications --to ai-platform --ai
 ```
 
-**Example Manifest 1:** `my-manifests/products/rules.md`
+**Step 3: Write your instructions**
+Navigate into each service folder (`ai-platform/services/products` and `ai-platform/services/notifications`) and edit the `instrucoes.md` file. Provide detailed instructions for the AI on what the FastAPI application should do.
+
+*Example for `ai-platform/services/products/instrucoes.md`:*
+
 ```markdown
-# Products Microservice
+# Instructions for the Products Service
 Create a FastAPI application to manage a product catalog.
 - Must use Pydantic for Product models (id, name, price, description).
 - Implement GET /products, POST /products, and GET /products/{id} routes.
@@ -289,28 +288,28 @@ Create a FastAPI application to manage a product catalog.
 - Ensure the application runs on port 8001.
 ```
 
-**Example Manifest 2:** `my-manifests/notifications/instructions.md`
+*Example for `ai-platform/services/notifications/instrucoes.md`:*
 ```markdown
-# Notifications Microservice
+# Instructions for the Notifications Service
 Create a FastAPI application to send notifications.
 - Include a POST /send route with a payload containing (email, message).
 - Simply print the message to the console to simulate sending.
 - Must run on port 8002.
 ```
 
-**Example Validation Rule:** `my-manifests/validation/security_rules.md`
+*(Optional) Global Rules:* You can create an `ai-platform/services/validation/security_rules.md` to dictate security standards for all services:
 ```markdown
 The code must not contain hardcoded secret keys or passwords (like database passwords in the middle of the code).
 Verify that Pydantic is used in all requests that receive a data body.
 ```
 
-**Step 3: Code Generation**
+**Step 4: AI Generation Execution**
 
-You have two options to generate this project:
+You have two options to run your prompts and generate the Python code.
 
 **Option A - Via Graphical Interface (Dev UI):**
 ```bash
-fastgen dev-ui --ai-path ./my-manifests
+fastgen dev-ui --ai-path ./ai-platform/services
 ```
 - Go to `http://localhost:9000`
 - Navigate to the **🤖 AI Generator** tab
@@ -318,7 +317,7 @@ fastgen dev-ui --ai-path ./my-manifests
 
 **Option B - Via Command Line (CLI):**
 ```bash
-fastgen ai-generate --path ./my-manifests
+fastgen ai-generate --path ./ai-platform/services
 ```
 - The CLI will read the manifests folder.
 - For each subfolder (products, notifications), it will propose an **architecture plan** and display it in the terminal.

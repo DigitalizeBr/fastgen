@@ -36,6 +36,8 @@ enum Commands {
         name: String,
         #[arg(long)]
         to: String,
+        #[arg(long)]
+        ai: bool,
     },
     AddExt {
         #[arg(short, long)]
@@ -61,7 +63,7 @@ pub fn run(config: Config) {
         Commands::Generate { blueprint } => generate_project(&blueprint),
         Commands::Plugin { name, project } => apply_plugin(&name, &project, &config),
         Commands::NewWorkspace { name } => create_workspace(&name),
-        Commands::AddService { name, to } => add_service(&name, &to),
+        Commands::AddService { name, to, ai } => add_service(&name, &to, ai),
         Commands::AddExt { name, to } => add_external_service(&name, &to),
         Commands::DevUi { repo, ai_path } => start_dev_ui(&repo, ai_path.as_deref(), &config),
         Commands::AiGenerate { path } => run_ai_generation(&path, &config),

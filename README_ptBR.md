@@ -49,6 +49,8 @@ fastgen add-service --name auth --to minha-plataforma
 fastgen add-ext --name postgresql --to minha-plataforma
 ```
 
+> **Nota sobre o parâmetro `<REPO>` / `--to`:** Sempre que encontrar parâmetros como `--to <caminho>` ou `--repo <caminho>`, eles referem-se ao **caminho local** (pasta) do seu workspace gerado (ex: `minha-plataforma` ou `./minha-plataforma`), e não a uma URL remota do GitHub.
+
 ---
 
 ## 📦 Requisitos
@@ -267,33 +269,29 @@ Acesse **http://localhost:9000** em seu navegador.
 - Na aba **Workspace**, você pode ver os serviços gerados e extensões.
 - Na aba **🤖 AI Generator**, você pode visualizar os manifestos da IA, ver o status de geração e iniciar o processo de geração diretamente da interface com um clique.
 
-### 🚀 Tutorial: Criando um Projeto Totalmente Novo com IA
+### 🚀 Tutorial: Fluxo Completo (Criando um projeto e automatizando serviços com IA)
 
-Vamos criar um sistema completo (ex: uma API de Produtos e um Serviço de Notificações) do zero usando IA.
+O FastGen permite inicializar facilmente um workspace e preparar automaticamente seus serviços para a geração de IA usando a flag `--ai`. Vamos criar um sistema completo (ex: uma API de Produtos e um Serviço de Notificações) do zero usando IA, em Python, com `uv` e FastAPI.
 
-**Passo 1: Crie um diretório para seus manifestos**
-Esse diretório será lido pelos Agentes de IA para entender o que deve ser codificado.
+**Passo 1: Inicialize o Workspace**
+Crie a sua plataforma base.
 ```bash
-mkdir meus-manifestos
+fastgen new-workspace --name ai-platform
 ```
 
-**Passo 2: Crie a estrutura de diretórios e escreva seus manifestos**
-Dentro do diretório de manifestos, você cria uma pasta para cada microsserviço que a IA deve gerar, e coloca um arquivo Markdown (`.md`) descrevendo as regras. Você também pode incluir uma pasta especial `validation` para regras globais de revisão.
-
-Estrutura recomendada:
-```
-meus-manifestos/
-├── produtos/
-│   └── regras.md
-├── notificacoes/
-│   └── instrucoes.md
-└── validation/
-    └── regras_seguranca.md
+**Passo 2: Adicione os serviços com Manifestos de IA**
+Utilize a flag `--ai` ao adicionar um serviço. Isso vai criar a estrutura padrão de `uv` + FastAPI e também vai gerar um modelo padrão de manifesto (`instrucoes.md`) para ser lido pela IA.
+```bash
+fastgen add-service --name produtos --to ai-platform --ai
+fastgen add-service --name notificacoes --to ai-platform --ai
 ```
 
-**Exemplo de Manifesto 1:** `meus-manifestos/produtos/regras.md`
+**Passo 3: Escreva suas instruções**
+Navegue para a pasta de cada serviço criado (`ai-platform/services/produtos` e `ai-platform/services/notificacoes`) e edite o arquivo `instrucoes.md` gerado, escrevendo o que exatamente sua aplicação FastAPI deve fazer.
+
+*Exemplo para `ai-platform/services/produtos/instrucoes.md`:*
 ```markdown
-# Microsserviço de Produtos
+# Instruções para o Serviço produtos
 Crie uma aplicação FastAPI para gerenciar um catálogo de produtos.
 - Deve usar Pydantic para os modelos de Produto (id, nome, preco, descricao).
 - Deve criar as rotas GET /produtos, POST /produtos, GET /produtos/{id}.
@@ -301,28 +299,28 @@ Crie uma aplicação FastAPI para gerenciar um catálogo de produtos.
 - Garanta que a aplicação rode na porta 8001.
 ```
 
-**Exemplo de Manifesto 2:** `meus-manifestos/notificacoes/instrucoes.md`
+*Exemplo para `ai-platform/services/notificacoes/instrucoes.md`:*
 ```markdown
-# Microsserviço de Notificações
+# Instruções para o Serviço notificacoes
 Crie uma aplicação FastAPI para envio de notificações.
 - Rota POST /enviar com payload contendo (email, mensagem).
 - Apenas imprima a mensagem no console, simulando o envio.
 - Deve rodar na porta 8002.
 ```
 
-**Exemplo de Regra de Validação:** `meus-manifestos/validation/regras_seguranca.md`
+*(Opcional) Regras Globais:* Você pode criar um arquivo em `ai-platform/services/validation/regras_seguranca.md` para aplicar regras de qualidade para a IA revisar:
 ```markdown
 O código não pode conter chaves secretas ou senhas hardcoded (como senhas de banco de dados no meio do código).
 Verifique se Pydantic está sendo usado em todas as requisições que recebem corpo de dados.
 ```
 
-**Passo 3: Geração de Código**
+**Passo 4: Executar a Geração da IA**
 
-Você tem duas opções para gerar este projeto:
+Você tem duas opções para gerar este projeto baseado nos manifestos que editou:
 
 **Opção A - Pela Interface Gráfica (Dev UI):**
 ```bash
-fastgen dev-ui --ai-path ./meus-manifestos
+fastgen dev-ui --ai-path ./ai-platform/services
 ```
 - Acesse `http://localhost:9000`
 - Vá até a aba **🤖 AI Generator**
@@ -330,7 +328,7 @@ fastgen dev-ui --ai-path ./meus-manifestos
 
 **Opção B - Pela Linha de Comando (CLI):**
 ```bash
-fastgen ai-generate --path ./meus-manifestos
+fastgen ai-generate --path ./ai-platform/services
 ```
 - A CLI vai ler a pasta de manifestos.
 - Para cada pasta (produtos, notificacoes), ela irá propor um **plano de arquitetura** e exibirá no terminal.
