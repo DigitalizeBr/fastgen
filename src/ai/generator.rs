@@ -3,15 +3,35 @@ use std::path::Path;
 use std::io::Write;
 use crate::ai::providers::{LlmProvider, GeneratedFile};
 
-pub fn generate_plan(provider: &Box<dyn LlmProvider>, manifest_content: &str, service_name: &str) -> Result<String, String> {
+pub fn generate_plan(provider: &Box<dyn LlmProvider>, manifest_content: &str, service_name: &str, existing_code: &str, feedback: Option<&str>, previous_plan: Option<&str>) -> Result<String, String> {
+    let existing_code_section = if !existing_code.is_empty() {
+        format!(
+            "The directory already contains some code. You should refactor, update, or extend this existing code based on the instructions, rather than starting entirely from scratch unless requested.\n\n\
+            Existing Code:\n{}\n\n",
+            existing_code
+        )
+    } else {
+        String::new()
+    };
+
+    let feedback_section = match (feedback, previous_plan) {
+        (Some(f), Some(p)) => format!(
+            "The user reviewed your previous plan and provided the following feedback:\n{}\n\n\
+            Here was your previous plan:\n{}\n\n\
+            Please generate a NEW plan incorporating the user's feedback.\n\n",
+            f, p
+        ),
+        _ => String::new(),
+    };
+
     let prompt = format!(
         "You are FastGen AI, an expert software architect and Cloud Native engineer.\n\
-        The user wants to generate a microservice or infrastructure component named '{}'.\n\
+        The user wants to generate or update a microservice or infrastructure component named '{}'.\n\
         Read the following manifest/instructions:\n\n\
         {}\n\n\
-        Create a detailed step-by-step plan of the files and directories that will be created for this service.\n\
+        {}{}Create a detailed step-by-step plan of the files and directories that will be created or modified for this service.\n\
         Do NOT generate the code yet. Just describe the architecture and the file structure in Markdown.",
-        service_name, manifest_content
+        service_name, manifest_content, existing_code_section, feedback_section
     );
 
     provider.chat(&prompt)
@@ -22,16 +42,27 @@ pub fn execute_plan(
     manifest_content: &str,
     service_name: &str,
     plan_text: &str,
+    existing_code: &str,
     target_dir: &Path
 ) -> Result<(), String> {
+    let existing_code_section = if !existing_code.is_empty() {
+        format!(
+            "The following code already exists in the project. You should output the full, updated code for these files or new files as required by the plan.\n\n\
+            Existing Code:\n{}\n\n",
+            existing_code
+        )
+    } else {
+        String::new()
+    };
+
     let prompt = format!(
         "You are FastGen AI, an expert Cloud Native engineer.\n\
-        You must generate the code for a service named '{}'.\n\
+        You must generate or update the code for a service named '{}'.\n\
         Here is the original manifest:\n{}\n\n\
         Here is the approved plan:\n{}\n\n\
-        You MUST use the function 'create_files' to generate the files. \
+        {}You MUST use the function 'create_files' to generate the files. \
         Ensure all code is functional, clean, and follows best practices.",
-        service_name, manifest_content, plan_text
+        service_name, manifest_content, plan_text, existing_code_section
     );
 
     let files = provider.generate_files(&prompt)?;
@@ -48,7 +79,7 @@ pub fn execute_plan(
         let mut f = fs::File::create(&file_path).map_err(|e| format!("Failed to create file: {}", e))?;
         f.write_all(file.content.as_bytes()).map_err(|e| format!("Failed to write to file: {}", e))?;
 
-        println!("✅ Created file: {:?}", file_path);
+        println!("✅ Arquivo criado/atualizado: {:?}", file_path);
     }
 
     Ok(())

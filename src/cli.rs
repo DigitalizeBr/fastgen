@@ -45,13 +45,18 @@ enum Commands {
         #[arg(long)]
         to: String,
     },
+    /// Inicia o Dev UI do FastGen
     DevUi {
-        #[arg(long)]
+        /// Caminho para o repositório/workspace contendo o docker-compose.yml. Padrão é o diretório atual.
+        #[arg(long, default_value = ".")]
         repo: String,
+        /// Caminho para a pasta contendo os manifestos de IA
         #[arg(long)]
         ai_path: Option<String>,
     },
+    /// Inicia a geração de código via IA a partir de manifestos
     AiGenerate {
+        /// Caminho para a pasta contendo os manifestos de IA
         #[arg(short, long)]
         path: String,
     },

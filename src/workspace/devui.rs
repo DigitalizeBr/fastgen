@@ -78,7 +78,7 @@ fn handle_post_plan(request: &mut tiny_http::Request, config: &Config, ai_path: 
     }
 
     let parsed: Result<JsonValue, _> = serde_json::from_str(&content);
-    let service_name = match parsed {
+    let service_name = match &parsed {
         Ok(v) => v["service"].as_str().unwrap_or("").to_string(),
         Err(_) => return json!({"error": "Invalid JSON"}).to_string(),
     };
@@ -115,8 +115,47 @@ fn handle_post_plan(request: &mut tiny_http::Request, config: &Config, ai_path: 
         return json!({"error": "No manifest found"}).to_string();
     }
 
-    match generate_plan(&provider, &manifest_content, &service_name) {
-        Ok(plan) => json!({"plan": plan, "manifest": manifest_content}).to_string(),
+    // Scan for existing code
+    let mut existing_code = String::new();
+    fn read_existing_code(dir: &Path, acc: &mut String) {
+        if let Ok(entries) = fs::read_dir(dir) {
+            for entry in entries.flatten() {
+                let path = entry.path();
+                let name = path.file_name().unwrap_or_default().to_string_lossy();
+
+                // Skip hidden files/directories (like .git, .env) and common build/dependency folders
+                if name.starts_with('.') || name == "target" || name == "node_modules" || name == "build" || name == "dist" || name == "venv" {
+                    continue;
+                }
+
+                if path.is_dir() {
+                    read_existing_code(&path, acc);
+                } else if path.is_file() {
+                    let ext = path.extension().unwrap_or_default().to_string_lossy();
+                    if ext != "md" && ext != "yml" && ext != "yaml" {
+                        if let Ok(content) = fs::read_to_string(&path) {
+                            acc.push_str(&format!("\n\n--- Existing File: {:?} ---\n\n{}", path, content));
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    read_existing_code(&service_dir, &mut existing_code);
+
+    // Extract feedback and previous plan if they exist (for interactive generation from UI in the future)
+    let feedback = match &parsed {
+        Ok(v) => v.get("feedback").and_then(|f| f.as_str()).map(|s| s.to_string()),
+        Err(_) => None,
+    };
+    let previous_plan = match &parsed {
+        Ok(v) => v.get("previous_plan").and_then(|p| p.as_str()).map(|s| s.to_string()),
+        Err(_) => None,
+    };
+
+    match generate_plan(&provider, &manifest_content, &service_name, &existing_code, feedback.as_deref(), previous_plan.as_deref()) {
+        Ok(plan) => json!({"plan": plan, "manifest": manifest_content, "existing_code": existing_code}).to_string(),
         Err(e) => json!({"error": format!("Plan generation failed: {}", e)}).to_string(),
     }
 }
@@ -128,11 +167,12 @@ fn handle_post_execute(request: &mut tiny_http::Request, config: &Config, ai_pat
     }
 
     let parsed: Result<JsonValue, _> = serde_json::from_str(&content);
-    let (service_name, plan, manifest) = match parsed {
+    let (service_name, plan, manifest, existing_code) = match parsed {
         Ok(v) => (
             v["service"].as_str().unwrap_or("").to_string(),
             v["plan"].as_str().unwrap_or("").to_string(),
             v["manifest"].as_str().unwrap_or("").to_string(),
+            v["existing_code"].as_str().unwrap_or("").to_string(),
         ),
         Err(_) => return json!({"error": "Invalid JSON"}).to_string(),
     };
@@ -152,7 +192,7 @@ fn handle_post_execute(request: &mut tiny_http::Request, config: &Config, ai_pat
 
     let service_dir = Path::new(path).join(&service_name);
 
-    if let Err(e) = execute_plan(&provider, &manifest, &service_name, &plan, &service_dir) {
+    if let Err(e) = execute_plan(&provider, &manifest, &service_name, &plan, &existing_code, &service_dir) {
         return json!({"error": format!("Execution failed: {}", e)}).to_string();
     }
 
@@ -310,6 +350,7 @@ fn generate_html(repo: &str, ai_path: Option<&str>) -> String {
         let currentService = "";
         let currentPlan = "";
         let currentManifest = "";
+        let currentExistingCode = "";
 
         function switchTab(tabId) {{
             document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
@@ -343,6 +384,7 @@ fn generate_html(repo: &str, ai_path: Option<&str>) -> String {
             currentService = name;
             currentPlan = "";
             currentManifest = "";
+            currentExistingCode = "";
 
             document.getElementById('ai-welcome').classList.add('hidden');
             document.getElementById('ai-service-panel').classList.remove('hidden');
@@ -388,6 +430,7 @@ fn generate_html(repo: &str, ai_path: Option<&str>) -> String {
                 }} else {{
                     currentPlan = data.plan;
                     currentManifest = data.manifest;
+                    currentExistingCode = data.existing_code;
 
                     document.getElementById('plan-content').innerHTML = marked.parse(currentPlan);
                     document.getElementById('plan-container').classList.remove('hidden');
@@ -411,7 +454,8 @@ fn generate_html(repo: &str, ai_path: Option<&str>) -> String {
                     body: JSON.stringify({{
                         service: currentService,
                         plan: currentPlan,
-                        manifest: currentManifest
+                        manifest: currentManifest,
+                        existing_code: currentExistingCode
                     }})
                 }});
                 const data = await res.json();
