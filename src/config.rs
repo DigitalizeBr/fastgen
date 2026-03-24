@@ -30,7 +30,21 @@ impl Default for Config {
 
 impl Config {
     pub fn load() -> Self {
-        Self::load_from_path(std::path::Path::new("config.yaml"))
+        let current_dir_path = std::path::PathBuf::from("config.yaml");
+        let exe_dir_path = std::env::current_exe()
+            .unwrap_or_else(|_| std::path::PathBuf::from(""))
+            .parent()
+            .map(|p| p.join("config.yaml"))
+            .unwrap_or_else(|| std::path::PathBuf::from("config.yaml"));
+
+        if current_dir_path.exists() {
+            Self::load_from_path(&current_dir_path)
+        } else if exe_dir_path.exists() {
+            Self::load_from_path(&exe_dir_path)
+        } else {
+            // Default behavior: create in current directory
+            Self::load_from_path(&current_dir_path)
+        }
     }
 
     pub fn load_from_path(path: &std::path::Path) -> Self {

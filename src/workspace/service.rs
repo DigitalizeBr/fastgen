@@ -4,9 +4,15 @@ use std::process::Command;
 use std::env;
 use tera::{Tera, Context};
 
-pub fn add_service(name: &str, repo: &str) {
+pub fn add_service(name: &str, repo: &str, ai: bool) {
     let service_path = Path::new(repo).join("services").join(name);
     fs::create_dir_all(&service_path).unwrap();
+
+    if ai {
+        let manifest_content = format!("# Instruções para o Serviço {}\n\nDescreva aqui o que este serviço deve fazer.\n\n- Ponto 1\n- Ponto 2\n", name);
+        fs::write(service_path.join("instrucoes.md"), manifest_content).unwrap();
+        println!("📝 Manifesto AI (instrucoes.md) criado para o serviço '{}'.", name);
+    }
 
     // Corrigir o path dos templates
     let exe_path = env::current_exe().unwrap();

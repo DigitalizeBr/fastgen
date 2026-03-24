@@ -66,8 +66,15 @@ pub fn run_ai_generation(path: &str, config: &Config) {
         if let Ok(entries) = fs::read_dir(&service_dir) {
             for entry in entries.flatten() {
                 let p = entry.path();
+                // A manifest file should not be named "README.md" (if we want to ignore standard readmes),
+                // but any .md or .yml file like instrucoes.md, regras.md or manifest.md will work.
                 if p.is_file() && p.extension().map(|e| e == "md" || e == "yml" || e == "yaml").unwrap_or(false) {
+                    let file_name = p.file_name().unwrap_or_default().to_string_lossy().to_lowercase();
+                    // Optional: skip generic files if you want to enforce specific names,
+                    // but usually we just take the first `.md` file found.
+                    // Taking the first .md file we can read.
                     if let Ok(content) = fs::read_to_string(&p) {
+                        println!("📄 Using manifest file: {}", file_name);
                         manifest_content = content;
                         break;
                     }
