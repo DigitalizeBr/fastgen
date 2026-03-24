@@ -7,9 +7,31 @@ use crate::config::Config;
 use crate::ai::providers::get_provider;
 use crate::ai::generator::{generate_plan, execute_plan, validate_code};
 use std::io::Read;
+use std::process::Command;
 
 pub fn start_dev_ui(repo: &str, ai_path: Option<&str>, config: &Config) {
     let address = "127.0.0.1:9000";
+
+    // Auto-start docker-compose if exists
+    let compose_path = Path::new(repo).join("docker-compose.yml");
+    if compose_path.exists() {
+        println!("Found docker-compose.yml. Attempting to start services...");
+        let status = Command::new(get_docker_compose_cmd())
+            .arg("compose")
+            .arg("up")
+            .arg("-d")
+            .current_dir(repo)
+            .status();
+
+        match status {
+            Ok(s) if s.success() => println!("Services started successfully."),
+            Ok(s) => println!("Failed to start some services. Exit code: {}", s),
+            Err(e) => println!("Error trying to start services: {}", e),
+        }
+    } else {
+        println!("No docker-compose.yml found in the workspace.");
+    }
+
     let server = Server::http(address).expect("Failed to start server");
     println!("FastGen Dev UI running at http://{}/", address);
     if let Some(path) = ai_path {
@@ -21,9 +43,19 @@ pub fn start_dev_ui(repo: &str, ai_path: Option<&str>, config: &Config) {
         let method = request.method().clone();
 
         if url.starts_with("/api/") {
-            let res_json = match (method, url.as_str()) {
+            let res_json = match (method.clone(), url.as_str()) {
                 (Method::Get, "/api/services") => {
                     handle_get_services(ai_path)
+                },
+                (Method::Get, "/api/compose/status") => {
+                    handle_get_compose_status(repo)
+                },
+                (Method::Post, "/api/compose/action") => {
+                    handle_post_compose_action(&mut request, repo)
+                },
+                (Method::Get, u) if u.starts_with("/api/compose/logs/") => {
+                    let service_name = u.trim_start_matches("/api/compose/logs/");
+                    handle_get_compose_logs(repo, service_name)
                 },
                 (Method::Post, "/api/plan") => {
                     handle_post_plan(&mut request, config, ai_path)
@@ -47,6 +79,120 @@ pub fn start_dev_ui(repo: &str, ai_path: Option<&str>, config: &Config) {
         let response = Response::from_string(html)
             .with_header(Header::from_bytes(&b"Content-Type"[..], &b"text/html"[..]).unwrap());
         let _ = request.respond(response);
+    }
+}
+
+fn get_docker_compose_cmd() -> &'static str {
+    // A simple helper to prefer `docker compose` over `docker-compose` if needed,
+    // but for now we will rely on standard `docker compose` which is the modern standard.
+    // If it fails, users can alias it or we can do a fallback, but `docker` is standard.
+    "docker"
+}
+
+fn handle_get_compose_status(repo: &str) -> String {
+    // Run `docker compose ps --format json`
+    let output = Command::new(get_docker_compose_cmd())
+        .arg("compose")
+        .arg("ps")
+        .arg("--format")
+        .arg("json")
+        .current_dir(repo)
+        .output();
+
+    match output {
+        Ok(out) => {
+            if out.status.success() {
+                let stdout_str = String::from_utf8_lossy(&out.stdout);
+
+                // parse the JSON lines or JSON array from `docker compose ps`
+                let mut containers = Vec::new();
+                for line in stdout_str.lines() {
+                    if let Ok(val) = serde_json::from_str::<JsonValue>(line) {
+                        containers.push(val);
+                    }
+                }
+
+                // If the output is a single JSON array rather than JSON lines
+                if containers.is_empty() && stdout_str.trim().starts_with('[') {
+                    if let Ok(arr) = serde_json::from_str::<Vec<JsonValue>>(&stdout_str) {
+                        containers = arr;
+                    }
+                }
+
+                json!({"status": "success", "containers": containers}).to_string()
+            } else {
+                let err = String::from_utf8_lossy(&out.stderr);
+                json!({"error": format!("Command failed: {}", err)}).to_string()
+            }
+        },
+        Err(e) => json!({"error": format!("Failed to execute docker compose: {}", e)}).to_string(),
+    }
+}
+
+fn handle_post_compose_action(request: &mut tiny_http::Request, repo: &str) -> String {
+    let mut content = String::new();
+    if request.as_reader().read_to_string(&mut content).is_err() {
+        return json!({"error": "Failed to read body"}).to_string();
+    }
+
+    let parsed: Result<JsonValue, _> = serde_json::from_str(&content);
+    let (action, service) = match parsed {
+        Ok(v) => (
+            v["action"].as_str().unwrap_or("").to_string(),
+            v["service"].as_str().unwrap_or("").to_string(),
+        ),
+        Err(_) => return json!({"error": "Invalid JSON"}).to_string(),
+    };
+
+    if !["start", "stop", "restart", "up"].contains(&action.as_str()) {
+        return json!({"error": "Invalid action"}).to_string();
+    }
+
+    let mut cmd = Command::new(get_docker_compose_cmd());
+    cmd.arg("compose").arg(&action).current_dir(repo);
+
+    if !service.is_empty() && action != "up" {
+        cmd.arg(&service);
+    } else if action == "up" && !service.is_empty() {
+        cmd.arg("-d").arg(&service);
+    } else if action == "up" {
+        cmd.arg("-d");
+    }
+
+    match cmd.output() {
+        Ok(out) => {
+            if out.status.success() {
+                json!({"status": "success", "action": action, "service": service}).to_string()
+            } else {
+                let err = String::from_utf8_lossy(&out.stderr);
+                json!({"error": format!("Action failed: {}", err)}).to_string()
+            }
+        },
+        Err(e) => json!({"error": format!("Execution failed: {}", e)}).to_string(),
+    }
+}
+
+fn handle_get_compose_logs(repo: &str, service: &str) -> String {
+    let output = Command::new(get_docker_compose_cmd())
+        .arg("compose")
+        .arg("logs")
+        .arg("--tail")
+        .arg("100")
+        .arg(service)
+        .current_dir(repo)
+        .output();
+
+    match output {
+        Ok(out) => {
+            if out.status.success() {
+                let stdout_str = String::from_utf8_lossy(&out.stdout);
+                json!({"status": "success", "logs": stdout_str}).to_string()
+            } else {
+                let err = String::from_utf8_lossy(&out.stderr);
+                json!({"error": format!("Failed to fetch logs: {}", err)}).to_string()
+            }
+        },
+        Err(e) => json!({"error": format!("Execution failed: {}", e)}).to_string(),
     }
 }
 
@@ -236,7 +382,20 @@ fn generate_html(repo: &str, ai_path: Option<&str>) -> String {
     }
 
     let compose_list_html = compose_services.iter()
-        .map(|srv| format!(r#"<li class="p-3 bg-gray-50 border border-gray-200 rounded-md">{}</li>"#, srv))
+        .map(|srv| format!(r#"
+            <li class="p-4 bg-gray-50 border border-gray-200 rounded-md flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                    <span class="font-bold text-gray-800 text-lg">{}</span>
+                    <span id="status-{}" class="ml-2 px-2 py-1 text-xs font-semibold rounded bg-gray-200 text-gray-700">Checking...</span>
+                </div>
+                <div class="flex flex-wrap gap-2">
+                    <button onclick="composeAction('start', '{}')" class="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700 text-sm">Start</button>
+                    <button onclick="composeAction('stop', '{}')" class="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700 text-sm">Stop</button>
+                    <button onclick="composeAction('restart', '{}')" class="px-3 py-1 bg-yellow-500 text-white rounded hover:bg-yellow-600 text-sm">Restart</button>
+                    <button onclick="viewLogs('{}')" class="px-3 py-1 bg-gray-600 text-white rounded hover:bg-gray-700 text-sm">Logs</button>
+                </div>
+            </li>
+        "#, srv, srv, srv, srv, srv, srv))
         .collect::<Vec<String>>()
         .join("");
 
@@ -274,12 +433,29 @@ fn generate_html(repo: &str, ai_path: Option<&str>) -> String {
         </div>
 
         <div id="content-compose" class="tab-content block">
-            <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-                <h2 class="text-2xl font-semibold mb-4">Compose Services</h2>
-                <ul class="space-y-2">
+            <div class="flex flex-col gap-6">
+                <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-2xl font-semibold">Compose Services</h2>
+                        <div class="flex gap-2">
+                            <button onclick="composeAction('up', '')" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 font-medium shadow-sm">Start All (Up)</button>
+                            <button onclick="composeAction('stop', '')" class="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 font-medium shadow-sm">Stop All</button>
+                        </div>
+                    </div>
+
+                    <ul class="space-y-3" id="compose-services-list">
+                        {}
+                    </ul>
                     {}
-                </ul>
-                {}
+                </div>
+
+                <div id="logs-panel" class="hidden bg-gray-900 p-4 rounded-lg shadow-sm border border-gray-700 text-gray-100 font-mono text-sm h-96 flex flex-col">
+                    <div class="flex justify-between items-center mb-2 border-b border-gray-700 pb-2">
+                        <h3 class="font-bold text-gray-300">Logs: <span id="log-service-name" class="text-green-400"></span></h3>
+                        <button onclick="closeLogs()" class="text-gray-400 hover:text-white px-2 py-1 rounded">✖ Close</button>
+                    </div>
+                    <div id="logs-content" class="overflow-auto flex-1 whitespace-pre-wrap">Loading...</div>
+                </div>
             </div>
         </div>
 
@@ -351,6 +527,94 @@ fn generate_html(repo: &str, ai_path: Option<&str>) -> String {
         let currentPlan = "";
         let currentManifest = "";
         let currentExistingCode = "";
+
+        async function fetchComposeStatus() {{
+            try {{
+                const res = await fetch('/api/compose/status');
+                const data = await res.json();
+
+                if (data.status === 'success') {{
+                    // Reset all statuses to off
+                    document.querySelectorAll('[id^="status-"]').forEach(el => {{
+                        el.textContent = 'Exited/Not Running';
+                        el.className = 'ml-2 px-2 py-1 text-xs font-semibold rounded bg-gray-200 text-gray-700';
+                    }});
+
+                    if (data.containers && Array.isArray(data.containers)) {{
+                        data.containers.forEach(c => {{
+                            const serviceName = c.Service;
+                            const state = c.State; // running, exited, etc.
+                            const el = document.getElementById('status-' + serviceName);
+                            if (el) {{
+                                el.textContent = state.charAt(0).toUpperCase() + state.slice(1);
+                                if (state === 'running') {{
+                                    el.className = 'ml-2 px-2 py-1 text-xs font-semibold rounded bg-green-100 text-green-800';
+                                }} else {{
+                                    el.className = 'ml-2 px-2 py-1 text-xs font-semibold rounded bg-red-100 text-red-800';
+                                }}
+                            }}
+                        }});
+                    }}
+                }}
+            }} catch(e) {{
+                console.error("Failed to fetch status", e);
+            }}
+        }}
+
+        async function composeAction(action, service) {{
+            const btnText = service ? service : "all services";
+            console.log(`Executing ${{action}} on ${{btnText}}`);
+            try {{
+                const res = await fetch('/api/compose/action', {{
+                    method: 'POST',
+                    headers: {{'Content-Type': 'application/json'}},
+                    body: JSON.stringify({{ action, service }})
+                }});
+                const data = await res.json();
+                if (data.error) {{
+                    alert("Error: " + data.error);
+                }} else {{
+                    setTimeout(fetchComposeStatus, 1000);
+                }}
+            }} catch (e) {{
+                alert("Request failed: " + e);
+            }}
+        }}
+
+        let logsInterval = null;
+
+        async function viewLogs(service) {{
+            document.getElementById('logs-panel').classList.remove('hidden');
+            document.getElementById('log-service-name').textContent = service;
+            document.getElementById('logs-content').textContent = "Loading...";
+
+            if (logsInterval) clearInterval(logsInterval);
+
+            const fetchLogs = async () => {{
+                try {{
+                    const res = await fetch('/api/compose/logs/' + service);
+                    const data = await res.json();
+                    if (data.status === 'success') {{
+                        const logsContent = document.getElementById('logs-content');
+                        logsContent.textContent = data.logs || "No logs available.";
+                        logsContent.scrollTop = logsContent.scrollHeight;
+                    }}
+                }} catch (e) {{
+                    console.error("Log fetch failed", e);
+                }}
+            }};
+
+            fetchLogs();
+            logsInterval = setInterval(fetchLogs, 3000); // Poll logs every 3 seconds
+        }}
+
+        function closeLogs() {{
+            document.getElementById('logs-panel').classList.add('hidden');
+            if (logsInterval) clearInterval(logsInterval);
+        }}
+
+        // Periodically refresh compose status
+        setInterval(fetchComposeStatus, 5000);
 
         function switchTab(tabId) {{
             document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
@@ -485,6 +749,9 @@ fn generate_html(repo: &str, ai_path: Option<&str>) -> String {
             document.getElementById('ai-app').classList.remove('hidden');
             fetchServices();
         }}
+
+        // Initial fetch
+        fetchComposeStatus();
 
     </script>
 </body>
