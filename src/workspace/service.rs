@@ -1,3 +1,4 @@
+use std::fmt::Write as _;
 use std::fs;
 use std::path::Path;
 use std::process::Command;
@@ -38,15 +39,15 @@ pub fn add_service(name: &str, repo: &str, ai: bool) {
     let mut compose = fs::read_to_string(&compose_path).unwrap();
     if !compose.contains(&format!("  {}:", name)) {
         let port = 8000 + rand::random::<u16>() % 1000;
-        compose.push_str(&format!(
+        let _ = write!(compose,
             "  {}:\n    build: ./services/{}\n    ports:\n      - \"{}:{}\"\n",
             name, name, port, 8000
-        ));
+        );
         fs::write(compose_path, compose).unwrap();
 
         let env_path = Path::new(repo).join(".env");
         let mut env = fs::read_to_string(&env_path).unwrap();
-        env.push_str(&format!("{}_PORT={}\n", name.to_uppercase(), port));
+        let _ = write!(env, "{}_PORT={}\n", name.to_uppercase(), port);
         fs::write(env_path, env).unwrap();
     }
 
