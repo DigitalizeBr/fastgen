@@ -69,7 +69,12 @@ pub fn run(config: Config) {
         Commands::Plugin { name, project } => apply_plugin(&name, &project, &config),
         Commands::NewWorkspace { name } => create_workspace(&name),
         Commands::AddService { name, to, ai } => add_service(&name, &to, ai),
-        Commands::AddExt { name, to } => add_external_service(&name, &to),
+        Commands::AddExt { name, to } => {
+            if let Err(e) = add_external_service(&name, &to) {
+                eprintln!("Erro ao adicionar serviço externo: {}", e);
+                std::process::exit(1);
+            }
+        }
         Commands::DevUi { repo, ai_path } => start_dev_ui(&repo, ai_path.as_deref(), &config),
         Commands::AiGenerate { path } => run_ai_generation(&path, &config),
     }
