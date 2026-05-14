@@ -71,7 +71,7 @@ pub fn run(config: Config) {
         Commands::AddService { name, to, ai } => add_service(&name, &to, ai),
         Commands::AddExt { name, to } => {
             if let Err(e) = add_external_service(&name, &to) {
-                eprintln!("Erro ao adicionar serviço externo: {}", e);
+                eprintln!("{}", e);
                 std::process::exit(1);
             }
         }
