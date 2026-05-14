@@ -1,3 +1,4 @@
+use std::fmt::Write as _;
 use std::fs;
 use std::path::{Path, PathBuf};
 use serde_yaml::Value as YamlValue;
@@ -280,7 +281,7 @@ fn handle_post_plan(request: &mut tiny_http::Request, config: &Config, ai_path: 
                     let ext = path.extension().unwrap_or_default().to_string_lossy();
                     if ext != "md" && ext != "yml" && ext != "yaml" {
                         if let Ok(content) = fs::read_to_string(&path) {
-                            acc.push_str(&format!("\n\n--- Existing File: {:?} ---\n\n{}", path, content));
+                            let _ = write!(acc, "\n\n--- Existing File: {:?} ---\n\n{}", path, content);
                         }
                     }
                 }

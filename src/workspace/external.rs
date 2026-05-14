@@ -1,3 +1,4 @@
+use std::fmt::Write as _;
 use std::path::Path;
 use std::error::Error;
 
@@ -11,7 +12,7 @@ pub fn add_external_service(name: &str, repo: &str) -> Result<(), Box<dyn Error>
         .map_err(|e| format!("Erro ao ler docker-compose.yml em '{}': {}", repo, e))?;
 
     if !compose.contains(&format!("  {}:", name)) {
-        compose.push_str(&format!("\n{}", snippet));
+        let _ = write!(compose, "\n{}", snippet);
         std::fs::write(&compose_path, compose)
             .map_err(|e| format!("Erro ao salvar docker-compose.yml: {}", e))?;
     }
@@ -21,7 +22,7 @@ pub fn add_external_service(name: &str, repo: &str) -> Result<(), Box<dyn Error>
         .map_err(|e| format!("Erro ao ler .env em '{}': {}", repo, e))?;
 
     if !env.contains(&format!("{}_ENABLED=true", name.to_uppercase())) {
-        env.push_str(&format!("{}_ENABLED=true\n", name.to_uppercase()));
+        let _ = write!(env, "{}_ENABLED=true\n", name.to_uppercase());
         std::fs::write(&env_path, env)
             .map_err(|e| format!("Erro ao salvar .env: {}", e))?;
     }

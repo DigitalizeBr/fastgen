@@ -1,3 +1,4 @@
+use std::fmt::Write as _;
 use std::fs;
 use std::path::Path;
 use std::io::Write;
@@ -102,7 +103,7 @@ pub fn validate_code(
                 if path.is_dir() {
                     read_dir_recursive(&path, acc);
                 } else if let Ok(content) = fs::read_to_string(&path) {
-                    acc.push_str(&format!("\n\n--- File: {:?} ---\n\n{}", path, content));
+                    let _ = write!(acc, "\n\n--- File: {:?} ---\n\n{}", path, content);
                 }
             }
         }

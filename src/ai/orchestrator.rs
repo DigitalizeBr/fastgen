@@ -1,3 +1,4 @@
+use std::fmt::Write as _;
 use std::fs;
 use std::path::{Path, PathBuf};
 use crate::config::Config;
@@ -109,7 +110,7 @@ pub fn run_ai_generation(path: &str, config: &Config) {
 
                         // Try reading text files, ignore binary/unreadable files
                         if let Ok(content) = fs::read_to_string(&path) {
-                            acc.push_str(&format!("\n\n--- Arquivo Existente: {:?} ---\n\n{}", path, content));
+                            let _ = write!(acc, "\n\n--- Arquivo Existente: {:?} ---\n\n{}", path, content);
                         }
                     }
                 }
